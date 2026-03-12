@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Breathe — Your Breathing Coach</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#7c6af7">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Breathe">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root {
+    --bg: #0d0d1a;
+    --surface: #13132a;
+    --card: #1a1a35;
+    --accent: #7c6af7;
+    --accent2: #a78bfa;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --border: rgba(124,106,247,0.2);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ---- SCREENS ---- */
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* ---- HOME ---- */
+  #home {
+    background: radial-gradient(ellipse at 50% 0%, #1e1040 0%, #0d0d1a 70%);
+    padding: 0 20px 40px;
+  }
+
+  .hero {
+    text-align: center;
+    padding: 60px 20px 40px;
+  }
+
+  .hero-icon {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 20px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #7c6af7, #a78bfa);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 40px rgba(124,106,247,0.4);
+    animation: pulse-icon 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse-icon {
+    0%,100% { box-shadow: 0 0 40px rgba(124,106,247,0.4); }
+    50% { box-shadow: 0 0 70px rgba(124,106,247,0.7); }
+  }
+
+  .hero h1 {
+    font-size: 2.4rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #e2e8f0, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero p {
+    color: var(--muted);
+    margin-top: 10px;
+    font-size: 1.05rem;
+  }
+
+  .section-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 32px 0 14px;
+  }
+
+  .exercises-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .ex-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 22px 18px;
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ex-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: 20px 20px 0 0;
+    background: var(--card-accent, linear-gradient(90deg, #7c6af7, #a78bfa));
+  }
+
+  .ex-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(124,106,247,0.5);
+    box-shadow: 0 8px 32px rgba(124,106,247,0.15);
+  }
+
+  .ex-card .icon { font-size: 2rem; margin-bottom: 10px; display: block; }
+  .ex-card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 4px; }
+  .ex-card p { font-size: 0.78rem; color: var(--muted); line-height: 1.4; }
+
+  .badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    margin-top: 10px;
+  }
+  .badge.sleep { background: rgba(99,102,241,0.2); color: #818cf8; }
+  .badge.energy { background: rgba(234,179,8,0.15); color: #facc15; }
+  .badge.focus { background: rgba(6,182,212,0.15); color: #22d3ee; }
+  .badge.balance { background: rgba(34,197,94,0.15); color: #4ade80; }
+  .badge.stress { background: rgba(239,68,68,0.15); color: #f87171; }
+  .badge.calm { background: rgba(168,85,247,0.15); color: #c084fc; }
+
+  /* ---- EXERCISE SCREEN ---- */
+  #exercise {
+    position: relative;
+    overflow: hidden;
+    justify-content: space-between;
+  }
+
+  .ex-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    transition: background 1.5s ease;
+  }
+
+  .ex-top {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+  }
+
+  .back-btn {
+    background: rgba(255,255,255,0.08);
+    border: none;
+    color: var(--text);
+    border-radius: 12px;
+    padding: 10px 16px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s;
+  }
+  .back-btn:hover { background: rgba(255,255,255,0.14); }
+
+  .ex-title-header {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .sound-btn {
+    background: rgba(255,255,255,0.08);
+    border: none;
+    color: var(--text);
+    border-radius: 12px;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.2s;
+  }
+  .sound-btn:hover { background: rgba(255,255,255,0.14); }
+
+  /* Central bubble area */
+  .bubble-area {
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 28px;
+  }
+
+  .bubble-wrapper {
+    position: relative;
+    width: 220px;
+    height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Outer glow rings */
+  .ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.08);
+    animation: ring-pulse 4s ease-in-out infinite;
+  }
+  .ring-1 { width: 100%; height: 100%; animation-delay: 0s; }
+  .ring-2 { width: 120%; height: 120%; animation-delay: 0.5s; }
+  .ring-3 { width: 140%; height: 140%; animation-delay: 1s; opacity: 0.5; }
+
+  @keyframes ring-pulse {
+    0%,100% { opacity: 0.15; }
+    50% { opacity: 0.35; }
+  }
+
+  .bubble {
+    position: relative;
+    z-index: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.35), rgba(255,255,255,0.0) 60%),
+                radial-gradient(circle at center, var(--bubble-color1, #7c6af7), var(--bubble-color2, #4c1d95));
+    box-shadow:
+      0 0 60px var(--bubble-glow, rgba(124,106,247,0.5)),
+      inset 0 0 40px rgba(255,255,255,0.05);
+    transition: width 0.3s, height 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .bubble-text {
+    text-align: center;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .phase-label {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: rgba(255,255,255,0.95);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  }
+
+  .phase-timer {
+    font-size: 2.2rem;
+    font-weight: 300;
+    color: rgba(255,255,255,0.9);
+    text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    line-height: 1;
+    margin-top: 4px;
+  }
+
+  /* Instruction area */
+  .instruction-box {
+    text-align: center;
+    padding: 0 30px;
+    max-width: 360px;
+  }
+
+  .instruction-main {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.3;
+    transition: opacity 0.4s;
+  }
+
+  .instruction-sub {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin-top: 6px;
+    line-height: 1.5;
+    transition: opacity 0.4s;
+  }
+
+  /* Bottom controls */
+  .ex-bottom {
+    position: relative;
+    z-index: 2;
+    padding: 24px;
+  }
+
+  .progress-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .round-info {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .round-info span {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .total-timer {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+
+  .controls {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+  }
+
+  .ctrl-btn {
+    border: none;
+    border-radius: 16px;
+    padding: 14px 32px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+
+  .ctrl-btn:active { transform: scale(0.96); }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: white;
+    box-shadow: 0 4px 20px rgba(124,106,247,0.4);
+  }
+  .btn-primary:hover { box-shadow: 0 6px 28px rgba(124,106,247,0.55); }
+
+  .btn-secondary {
+    background: rgba(255,255,255,0.08);
+    color: var(--text);
+  }
+  .btn-secondary:hover { background: rgba(255,255,255,0.14); }
+
+  /* ---- COMPLETE SCREEN ---- */
+  #complete {
+    background: radial-gradient(ellipse at 50% 30%, #1e1040 0%, #0d0d1a 70%);
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 24px;
+  }
+
+  .complete-icon {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #7c6af7, #a78bfa);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 28px;
+    font-size: 2.4rem;
+    box-shadow: 0 0 60px rgba(124,106,247,0.5);
+    animation: complete-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  @keyframes complete-pop {
+    from { transform: scale(0); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  #complete h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    background: linear-gradient(135deg, #e2e8f0, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  #complete p {
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1.6;
+    max-width: 300px;
+    margin: 0 auto 32px;
+  }
+
+  .complete-stats {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    margin-bottom: 36px;
+  }
+
+  .stat-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px 24px;
+    min-width: 100px;
+  }
+
+  .stat-box .val {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--accent2);
+  }
+
+  .stat-box .lbl {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .complete-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-width: 280px;
+    margin: 0 auto;
+  }
+
+  /* Floating particles */
+  .particles { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .particle {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(124,106,247,0.15);
+    animation: float-up linear infinite;
+  }
+
+  @keyframes float-up {
+    from { transform: translateY(100vh) scale(0); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 0.5; }
+    to { transform: translateY(-20px) scale(1); opacity: 0; }
+  }
+
+  /* Wim Hof special: fast breath indicator */
+  .breath-dots {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    flex-wrap: wrap;
+    max-width: 300px;
+    margin: 0 auto;
+  }
+
+  .breath-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    transition: background 0.1s;
+  }
+
+  .breath-dot.done { background: var(--accent2); }
+
+  /* Step indicators for Wim Hof */
+  .wh-phase-indicator {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 8px;
+  }
+
+  .wh-step {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    background: rgba(255,255,255,0.05);
+    color: var(--muted);
+    transition: all 0.3s;
+  }
+
+  .wh-step.active {
+    background: rgba(124,106,247,0.3);
+    color: var(--accent2);
+    box-shadow: 0 0 12px rgba(124,106,247,0.3);
+  }
+
+  .wh-step.done {
+    background: rgba(34,197,94,0.15);
+    color: #4ade80;
+  }
+
+  /* Scrollable steps guide */
+  .steps-guide {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px 18px;
+    max-width: 360px;
+    margin: 0 auto;
+    text-align: left;
+  }
+
+  .steps-guide h4 {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .step-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    transition: opacity 0.3s;
+  }
+
+  .step-item:last-child { border-bottom: none; }
+
+  .step-item.active .step-num {
+    background: var(--accent);
+    color: white;
+  }
+
+  .step-item.past { opacity: 0.4; }
+
+  .step-num {
+    min-width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.07);
+    color: var(--muted);
+    font-size: 0.7rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  .step-text {
+    font-size: 0.82rem;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  .step-item.active .step-text {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  /* Tooltip on card hover */
+  .ex-card .hover-tip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a1a35;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 0.75rem;
+    color: var(--muted);
+    width: 180px;
+    text-align: center;
+    z-index: 10;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  }
+
+  .ex-card:hover .hover-tip { display: block; }
+
+  /* Ambient color themes per exercise */
+  body.theme-sleep { --accent: #6366f1; --accent2: #818cf8; }
+  body.theme-energy { --accent: #f59e0b; --accent2: #fbbf24; }
+  body.theme-focus { --accent: #06b6d4; --accent2: #22d3ee; }
+  body.theme-balance { --accent: #10b981; --accent2: #34d399; }
+  body.theme-stress { --accent: #ec4899; --accent2: #f472b6; }
+  body.theme-calm { --accent: #8b5cf6; --accent2: #a78bfa; }
+
+  @media (max-width: 400px) {
+    .exercises-grid { grid-template-columns: 1fr; }
+    .bubble-wrapper { width: 180px; height: 180px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Floating particles -->
+<div class="particles" id="particles"></div>
+
+<!-- ======= HOME SCREEN ======= -->
+<div class="screen active" id="home">
+  <div class="hero">
+    <div class="hero-icon">
+      <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+        <circle cx="18" cy="18" r="14" stroke="white" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.4"/>
+        <circle cx="18" cy="18" r="9" fill="white" fill-opacity="0.15"/>
+        <path d="M18 10 Q22 14 18 18 Q14 22 18 26" stroke="white" stroke-width="2" stroke-linecap="round" fill="none"/>
+        <circle cx="18" cy="18" r="2.5" fill="white"/>
+      </svg>
+    </div>
+    <h1>Breathe</h1>
+    <p>Control your breath. Calm your mind.</p>
+  </div>
+
+  <div style="max-width:600px;margin:0 auto;padding:0 20px;width:100%">
+
+    <div class="section-label">Wind Down & Sleep</div>
+    <div class="exercises-grid">
+
+      <div class="ex-card" onclick="startExercise('478')" style="--card-accent: linear-gradient(90deg,#6366f1,#8b5cf6)">
+        <div class="hover-tip">Inhale 4s · Hold 7s · Exhale 8s</div>
+        <span class="icon">🌙</span>
+        <h3>4-7-8 Breathing</h3>
+        <p>Dr. Weil's sleep technique. Activates the parasympathetic nervous system.</p>
+        <span class="badge sleep">Sleep</span>
+      </div>
+
+      <div class="ex-card" onclick="startExercise('diaphragmatic')" style="--card-accent: linear-gradient(90deg,#8b5cf6,#a78bfa)">
+        <div class="hover-tip">Inhale 4s · Exhale 6s</div>
+        <span class="icon">🫁</span>
+        <h3>Diaphragmatic</h3>
+        <p>Deep belly breathing to lower cortisol and quiet the mind before sleep.</p>
+        <span class="badge calm">Calm</span>
+      </div>
+
+    </div>
+
+    <div class="section-label" style="margin-top:28px">Focus & Stress Relief</div>
+    <div class="exercises-grid">
+
+      <div class="ex-card" onclick="startExercise('box')" style="--card-accent: linear-gradient(90deg,#06b6d4,#0ea5e9)">
+        <div class="hover-tip">Inhale 4s · Hold 4s · Exhale 4s · Hold 4s</div>
+        <span class="icon">🔷</span>
+        <h3>Box Breathing</h3>
+        <p>Navy SEALs' technique for instant calm and razor-sharp focus.</p>
+        <span class="badge focus">Focus</span>
+      </div>
+
+      <div class="ex-card" onclick="startExercise('coherent')" style="--card-accent: linear-gradient(90deg,#10b981,#34d399)">
+        <div class="hover-tip">Inhale 5s · Exhale 5s</div>
+        <span class="icon">💚</span>
+        <h3>Coherent Breathing</h3>
+        <p>5-5 rhythm to maximise heart rate variability and reduce anxiety.</p>
+        <span class="badge balance">Balance</span>
+      </div>
+
+    </div>
+
+    <div class="section-label" style="margin-top:28px">Morning Energy</div>
+    <div class="exercises-grid">
+
+      <div class="ex-card" onclick="startExercise('wimhof')" style="--card-accent: linear-gradient(90deg,#f59e0b,#ef4444)">
+        <div class="hover-tip">30 power breaths + retention holds × 3 rounds</div>
+        <span class="icon">⚡</span>
+        <h3>Wim Hof</h3>
+        <p>Supercharge your body with oxygen. Boost energy, focus, and cold resilience.</p>
+        <span class="badge energy">Energy</span>
+      </div>
+
+      <div class="ex-card" onclick="startExercise('kapalabhati')" style="--card-accent: linear-gradient(90deg,#f97316,#fbbf24)">
+        <div class="hover-tip">Quick pumping exhales × 30 + deep hold</div>
+        <span class="icon">☀️</span>
+        <h3>Kapalabhati</h3>
+        <p>Yogic fire-breath. Clears the mind, energises the body, and wakes you up fast.</p>
+        <span class="badge energy">Energy</span>
+      </div>
+
+    </div>
+
+  </div>
+
+  <p style="text-align:center;color:var(--muted);font-size:0.75rem;margin-top:40px;padding-bottom:20px">
+    Tap any exercise to begin
+  </p>
+</div>
+
+<!-- ======= EXERCISE SCREEN ======= -->
+<div class="screen" id="exercise">
+  <div class="ex-bg" id="exBg"></div>
+
+  <div class="ex-top">
+    <button class="back-btn" onclick="goHome()">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Back
+    </button>
+    <span class="ex-title-header" id="exTitleHeader"></span>
+    <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔔</button>
+  </div>
+
+  <div class="bubble-area">
+    <!-- Wim Hof phase indicators (hidden by default) -->
+    <div class="wh-phase-indicator" id="whPhases" style="display:none">
+      <div class="wh-step" id="whStep0">Breathe</div>
+      <div class="wh-step" id="whStep1">Exhale Hold</div>
+      <div class="wh-step" id="whStep2">Inhale Hold</div>
+    </div>
+
+    <!-- Breath dots for Wim Hof -->
+    <div class="breath-dots" id="breathDots" style="display:none"></div>
+
+    <div class="bubble-wrapper" id="bubbleWrapper">
+      <div class="ring ring-1"></div>
+      <div class="ring ring-2"></div>
+      <div class="ring ring-3"></div>
+      <div class="bubble" id="bubble">
+        <div class="bubble-text">
+          <div class="phase-label" id="phaseLabel">Ready</div>
+          <div class="phase-timer" id="phaseTimer">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="instruction-box">
+      <div class="instruction-main" id="instrMain"></div>
+      <div class="instruction-sub" id="instrSub"></div>
+    </div>
+  </div>
+
+  <div class="ex-bottom">
+    <div class="steps-guide" id="stepsGuide">
+      <h4>Steps</h4>
+      <div id="stepsList"></div>
+    </div>
+
+    <div class="progress-info" style="margin-top:16px">
+      <div class="round-info">Round <span id="roundCurrent">1</span> of <span id="roundTotal">4</span></div>
+      <div class="total-timer" id="totalTimer">0:00</div>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+    <div class="controls">
+      <button class="ctrl-btn btn-secondary" id="resetBtn" onclick="resetExercise()">Restart</button>
+      <button class="ctrl-btn btn-primary" id="pauseBtn" onclick="togglePause()">Pause</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======= COMPLETE SCREEN ======= -->
+<div class="screen" id="complete">
+  <div class="complete-icon" id="completeIcon">✓</div>
+  <h2>Well done!</h2>
+  <p id="completeMsg">You've completed your session. Take a moment to notice how you feel.</p>
+
+  <div class="complete-stats">
+    <div class="stat-box">
+      <div class="val" id="statRounds">—</div>
+      <div class="lbl">Rounds</div>
+    </div>
+    <div class="stat-box">
+      <div class="val" id="statTime">—</div>
+      <div class="lbl">Minutes</div>
+    </div>
+  </div>
+
+  <div class="complete-btns">
+    <button class="ctrl-btn btn-primary" onclick="startExercise(lastExercise)">Repeat Session</button>
+    <button class="ctrl-btn btn-secondary" onclick="goHome()">Choose Another</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// EXERCISE DEFINITIONS
+// ============================================================
+const EXERCISES = {
+  '478': {
+    name: '4-7-8 Breathing',
+    theme: 'sleep',
+    bubbleColor1: '#818cf8',
+    bubbleColor2: '#3730a3',
+    bubbleGlow: 'rgba(99,102,241,0.6)',
+    bgGradient: 'radial-gradient(ellipse at 50% 50%, #1e1b4b 0%, #0d0d1a 80%)',
+    rounds: 4,
+    steps: [
+      { label: 'Empty lungs', desc: 'Start with a complete exhale through the mouth' },
+      { label: 'Inhale', desc: 'Breathe in slowly through the nose for 4 counts', phase: 'inhale', duration: 4 },
+      { label: 'Hold', desc: 'Hold your breath at the top — 7 counts', phase: 'hold', duration: 7 },
+      { label: 'Exhale', desc: 'Exhale fully through the mouth for 8 counts', phase: 'exhale', duration: 8 },
+    ],
+    completionMsg: 'The 4-7-8 technique quiets your nervous system. You are ready for deep, restful sleep.',
+  },
+  'diaphragmatic': {
+    name: 'Diaphragmatic',
+    theme: 'calm',
+    bubbleColor1: '#c084fc',
+    bubbleColor2: '#581c87',
+    bubbleGlow: 'rgba(168,85,247,0.6)',
+    bgGradient: 'radial-gradient(ellipse at 50% 50%, #2e1065 0%, #0d0d1a 80%)',
+    rounds: 6,
+    steps: [
+      { label: 'Find position', desc: 'Place one hand on chest, one on belly — only the belly hand should move' },
+      { label: 'Inhale', desc: 'Breathe deep into the belly, expanding it outward', phase: 'inhale', duration: 4 },
+      { label: 'Exhale', desc: 'Slow exhale — belly falls, longer than the inhale', phase: 'exhale', duration: 6 },
+    ],
+    completionMsg: 'Your parasympathetic nervous system is activated. Cortisol levels are dropping. Sleep is near.',
+  },
+  'box': {
+    name: 'Box Breathing',
+    theme: 'focus',
+    bubbleColor1: '#22d3ee',
+    bubbleColor2: '#164e63',
+    bubbleGlow: 'rgba(6,182,212,0.6)',
+    bgGradient: 'radial-gradient(ellipse at 50% 50%, #083344 0%, #0d0d1a 80%)',
+    rounds: 5,
+    steps: [
+      { label: 'Inhale', desc: 'Breathe in slowly and evenly through the nose', phase: 'inhale', duration: 4 },
+      { label: 'Hold top', desc: 'Hold — lungs full, stay relaxed', phase: 'hold', duration: 4 },
+      { label: 'Exhale', desc: 'Release air slowly and evenly', phase: 'exhale', duration: 4 },
+      { label: 'Hold bottom', desc: 'Hold — lungs empty, stay calm', phase: 'hold2', duration: 4 },
+    ],
+    completionMsg: 'Focus restored. Stress response neutralised. You are centred and clear-headed.',
+  },
+  'coherent': {
+    name: 'Coherent Breathing',
+    theme: 'balance',
+    bubbleColor1: '#34d399',
+    bubbleColor2: '#064e3b',
+    bubbleGlow: 'rgba(16,185,129,0.6)',
+    bgGradient: 'radial-gradient(ellipse at 50% 50%, #022c22 0%, #0d0d1a 80%)',
+    rounds: 6,
+    steps: [
+      { label: 'Inhale', desc: 'Breathe in gently through the nose — steady 5-count pace', phase: 'inhale', duration: 5 },
+      { label: 'Exhale', desc: 'Breathe out gently through the nose — same 5-count pace', phase: 'exhale', duration: 5 },
+    ],
+    completionMsg: 'HRV optimised. Your nervous system is balanced and resilient. Feel the calm.',
+  },
+  'wimhof': {
+    name: 'Wim Hof',
+    theme: 'energy',
+    bubbleColor1: '#fbbf24',
+    bubbleColor2: '#7c2d12',
+    bubbleGlow: 'rgba(245,158,11,0.6)',
+    bgGradient: 'radial-gradient(ellipse at 50% 50%, #431407 0%, #0d0d1a 80%)',
+    rounds: 3,
+    isWimHof: true,
+    completionMsg: 'Incredible! Your body is flooded with oxygen. Adrenaline is flowing. You are energised and alive!',
+  },
+  'kapalabhati': {
+    name: 'Kapalabhati',
+    theme: 'energy',
+    bubbleColor1: '#fb923c',
+    bubbleColor2: '#7c2d12',
+    bubbleGlow: 'rgba(249,115,22,0.6)',
+    bgGradient: 'radial-gradient(ellipse at 50% 50%, #431407 0%, #0d0d1a 80%)',
+    rounds: 3,
+    isKapalabhati: true,
+    completionMsg: 'Skull-shining breath complete! Your mind is clear, body awake. A perfect morning reset.',
+  },
+};
+
+// ============================================================
+// STATE
+// ============================================================
+let currentExercise = null;
+let lastExercise = null;
+let currentRound = 0;
+let currentStepIdx = 0;
+let phaseSecondsLeft = 0;
+let totalSecondsElapsed = 0;
+let isPaused = false;
+let soundOn = true;
+let sessionTimer = null;
+let phaseTimer = null;
+let startTime = null;
+
+// Wim Hof state
+let whPhase = 0; // 0=breathing, 1=exhale hold, 2=inhale hold
+let whBreathCount = 0;
+const WH_BREATHS = 30;
+const WH_EXHALE_HOLD = 15; // shown, user controls
+const WH_INHALE_HOLD = 15;
+
+// Kapalabhati state
+let kapBreathCount = 0;
+const KAP_BREATHS = 30;
+const KAP_EXHALE_HOLD = 10;
+
+// ============================================================
+// WEB AUDIO
+// ============================================================
+let audioCtx = null;
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playTone(freq, duration, type = 'sine', vol = 0.12) {
+  if (!soundOn) return;
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    gain.gain.setValueAtTime(0, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(vol, ctx.currentTime + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + duration);
+  } catch(e) {}
+}
+
+function chime(type) {
+  if (type === 'inhale')  { playTone(528, 0.5); }
+  if (type === 'exhale')  { playTone(396, 0.5); }
+  if (type === 'hold')    { playTone(417, 0.4, 'triangle'); }
+  if (type === 'tick')    { playTone(800, 0.07, 'square', 0.04); }
+  if (type === 'complete'){ playTone(528,0.4); setTimeout(()=>playTone(660,0.4),400); setTimeout(()=>playTone(792,0.6),800); }
+}
+
+// ============================================================
+// PARTICLES
+// ============================================================
+function spawnParticles() {
+  const container = document.getElementById('particles');
+  container.innerHTML = '';
+  for (let i = 0; i < 18; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = Math.random() * 12 + 4;
+    p.style.cssText = `
+      width:${size}px; height:${size}px;
+      left:${Math.random()*100}%;
+      animation-duration:${Math.random()*20+15}s;
+      animation-delay:${Math.random()*15}s;
+      opacity: ${Math.random()*0.4};
+    `;
+    container.appendChild(p);
+  }
+}
+
+spawnParticles();
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function goHome() {
+  stopAll();
+  document.body.className = '';
+  showScreen('home');
+}
+
+// ============================================================
+// START EXERCISE
+// ============================================================
+function startExercise(id) {
+  lastExercise = id;
+  currentExercise = EXERCISES[id];
+  const ex = currentExercise;
+
+  // Apply theme
+  document.body.className = 'theme-' + ex.theme;
+
+  // Set bubble colors as CSS vars on bubble element
+  const bubble = document.getElementById('bubble');
+  bubble.style.setProperty('--bubble-color1', ex.bubbleColor1);
+  bubble.style.setProperty('--bubble-color2', ex.bubbleColor2);
+  bubble.style.setProperty('--bubble-glow', ex.bubbleGlow);
+
+  // Background
+  document.getElementById('exBg').style.background = ex.bgGradient;
+
+  // Title
+  document.getElementById('exTitleHeader').textContent = ex.name;
+
+  // Round counter
+  document.getElementById('roundTotal').textContent = ex.rounds;
+
+  // Reset state
+  currentRound = 0;
+  totalSecondsElapsed = 0;
+  isPaused = false;
+  startTime = Date.now();
+
+  // Show screen
+  showScreen('exercise');
+
+  // Special setups
+  document.getElementById('whPhases').style.display = ex.isWimHof ? 'flex' : 'none';
+  document.getElementById('breathDots').style.display = (ex.isWimHof || ex.isKapalabhati) ? 'flex' : 'none';
+  document.getElementById('stepsGuide').style.display = (ex.isWimHof || ex.isKapalabhati) ? 'none' : 'block';
+
+  if (ex.isWimHof) {
+    buildBreathDots(WH_BREATHS);
+    startWimHof();
+  } else if (ex.isKapalabhati) {
+    buildBreathDots(KAP_BREATHS);
+    startKapalabhati();
+  } else {
+    buildStepsList(ex.steps);
+    startRound();
+  }
+
+  // Session clock
+  clearInterval(sessionTimer);
+  sessionTimer = setInterval(() => {
+    if (!isPaused) {
+      totalSecondsElapsed++;
+      const m = Math.floor(totalSecondsElapsed / 60);
+      const s = totalSecondsElapsed % 60;
+      document.getElementById('totalTimer').textContent = m + ':' + String(s).padStart(2,'0');
+    }
+  }, 1000);
+}
+
+// ============================================================
+// STANDARD EXERCISE (phases)
+// ============================================================
+function buildStepsList(steps) {
+  const list = document.getElementById('stepsList');
+  list.innerHTML = '';
+  steps.forEach((step, i) => {
+    const div = document.createElement('div');
+    div.className = 'step-item';
+    div.id = 'step_' + i;
+    div.innerHTML = `<div class="step-num">${i+1}</div><div class="step-text"><strong>${step.label}</strong> — ${step.desc}</div>`;
+    list.appendChild(div);
+  });
+}
+
+function updateStepHighlight(activeIdx) {
+  const steps = currentExercise.steps;
+  steps.forEach((_, i) => {
+    const el = document.getElementById('step_' + i);
+    if (!el) return;
+    el.className = 'step-item' + (i === activeIdx ? ' active' : (i < activeIdx ? ' past' : ''));
+  });
+}
+
+function startRound() {
+  currentRound++;
+  if (currentRound > currentExercise.rounds) { completeSession(); return; }
+  document.getElementById('roundCurrent').textContent = currentRound;
+  const progress = ((currentRound - 1) / currentExercise.rounds) * 100;
+  document.getElementById('progressFill').style.width = progress + '%';
+  currentStepIdx = 0;
+  runStep();
+}
+
+function runStep() {
+  const ex = currentExercise;
+  const steps = ex.steps;
+  // Skip non-timed steps quickly
+  while (currentStepIdx < steps.length && !steps[currentStepIdx].phase) {
+    updateStepHighlight(currentStepIdx);
+    setInstruction(steps[currentStepIdx]);
+    currentStepIdx++;
+    // brief pause for first step
+    if (currentStepIdx === 1) { /* continue immediately */ }
+  }
+
+  if (currentStepIdx >= steps.length) {
+    // Round done
+    setTimeout(startRound, 600);
+    return;
+  }
+
+  const step = steps[currentStepIdx];
+  updateStepHighlight(currentStepIdx);
+  phaseSecondsLeft = step.duration;
+  setPhaseUI(step);
+  chime(step.phase === 'hold2' ? 'hold' : step.phase);
+  animateBubble(step.phase, step.duration);
+
+  clearInterval(phaseTimer);
+  phaseTimer = setInterval(() => {
+    if (isPaused) return;
+    phaseSecondsLeft--;
+    document.getElementById('phaseTimer').textContent = phaseSecondsLeft;
+    if (phaseSecondsLeft <= 0) {
+      clearInterval(phaseTimer);
+      currentStepIdx++;
+      setTimeout(runStep, 200);
+    }
+  }, 1000);
+
+  document.getElementById('phaseTimer').textContent = phaseSecondsLeft;
+}
+
+function setPhaseUI(step) {
+  const labels = {
+    inhale: 'INHALE', exhale: 'EXHALE', hold: 'HOLD', hold2: 'HOLD'
+  };
+  const instructions = {
+    inhale: ['Breathe in slowly', 'Let air fill from belly to chest — nose breathing'],
+    exhale: ['Let it all go', 'Slow and complete — longer is better'],
+    hold:   ['Hold gently', 'Lungs full — stay relaxed, no tension'],
+    hold2:  ['Hold empty', 'Lungs empty — stay still and calm'],
+  };
+  const phase = step.phase;
+  document.getElementById('phaseLabel').textContent = labels[phase] || step.label;
+  const ins = instructions[phase];
+  setInstruction({ label: ins ? ins[0] : step.label, desc: ins ? ins[1] : step.desc });
+}
+
+function setInstruction(step) {
+  document.getElementById('instrMain').textContent = step.label || '';
+  document.getElementById('instrSub').textContent = step.desc || '';
+}
+
+// ============================================================
+// BUBBLE ANIMATION
+// ============================================================
+const BUBBLE_MIN = 110;
+const BUBBLE_MAX = 200;
+
+function animateBubble(phase, duration) {
+  const bubble = document.getElementById('bubble');
+  let startSize, endSize;
+
+  if (phase === 'inhale') { startSize = BUBBLE_MIN; endSize = BUBBLE_MAX; }
+  else if (phase === 'exhale') { startSize = BUBBLE_MAX; endSize = BUBBLE_MIN; }
+  else { // hold — subtle pulse
+    bubble.style.transition = `width 1s ease-in-out, height 1s ease-in-out`;
+    return;
+  }
+
+  bubble.style.transition = `width ${duration}s ease-in-out, height ${duration}s ease-in-out`;
+  // Force reflow then animate
+  bubble.style.width = startSize + 'px';
+  bubble.style.height = startSize + 'px';
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      bubble.style.width = endSize + 'px';
+      bubble.style.height = endSize + 'px';
+    });
+  });
+}
+
+function setBubbleSize(size, transition = '0.3s') {
+  const bubble = document.getElementById('bubble');
+  bubble.style.transition = `width ${transition} ease, height ${transition} ease`;
+  bubble.style.width = size + 'px';
+  bubble.style.height = size + 'px';
+}
+
+// ============================================================
+// WIM HOF METHOD
+// ============================================================
+function buildBreathDots(count) {
+  const container = document.getElementById('breathDots');
+  container.innerHTML = '';
+  for (let i = 0; i < count; i++) {
+    const d = document.createElement('div');
+    d.className = 'breath-dot';
+    d.id = 'dot_' + i;
+    container.appendChild(d);
+  }
+}
+
+function startWimHof() {
+  whPhase = 0;
+  whBreathCount = 0;
+  currentRound = 1;
+  document.getElementById('roundCurrent').textContent = currentRound;
+  document.getElementById('roundTotal').textContent = currentExercise.rounds;
+  resetDots(WH_BREATHS);
+  updateWHPhaseUI();
+  runWHBreathing();
+}
+
+function updateWHPhaseUI() {
+  [0,1,2].forEach(i => {
+    document.getElementById('whStep' + i).className = 'wh-step' +
+      (i === whPhase ? ' active' : (i < whPhase ? ' done' : ''));
+  });
+}
+
+function runWHBreathing() {
+  // 30 deep breaths: quick in + passive out
+  if (whBreathCount >= WH_BREATHS) {
+    // Transition to exhale hold
+    whPhase = 1;
+    updateWHPhaseUI();
+    document.getElementById('phaseLabel').textContent = 'EXHALE';
+    document.getElementById('instrMain').textContent = 'Exhale and hold';
+    document.getElementById('instrSub').textContent = 'Let the air out and do NOT breathe in. Hold as long as comfortable.';
+    animateBubble('exhale', 2);
+    chime('exhale');
+    setTimeout(() => {
+      document.getElementById('phaseLabel').textContent = 'HOLD';
+      runWHExhaleHold();
+    }, 2000);
+    return;
+  }
+
+  // Inhale fast
+  const dot = document.getElementById('dot_' + whBreathCount);
+  if (dot) dot.classList.add('done');
+
+  document.getElementById('phaseLabel').textContent = 'INHALE';
+  document.getElementById('instrMain').textContent = `Power breath ${whBreathCount + 1} / ${WH_BREATHS}`;
+  document.getElementById('instrSub').textContent = 'Big inhale through the mouth — fully expand the lungs!';
+  animateBubble('inhale', 0.8);
+  chime('inhale');
+
+  setTimeout(() => {
+    document.getElementById('phaseLabel').textContent = 'EXHALE';
+    document.getElementById('instrMain').textContent = 'Let go';
+    document.getElementById('instrSub').textContent = 'Passive release — don\'t force it';
+    animateBubble('exhale', 0.8);
+    whBreathCount++;
+    setTimeout(runWHBreathing, 900);
+  }, 900);
+}
+
+function runWHExhaleHold() {
+  let hold = 0;
+  document.getElementById('instrMain').textContent = 'Exhale hold';
+  document.getElementById('instrSub').textContent = 'Lungs empty. Hold. Press Pause when you need to breathe in.';
+  chime('hold');
+
+  const t = setInterval(() => {
+    if (isPaused) return;
+    hold++;
+    document.getElementById('phaseTimer').textContent = hold + 's';
+    if (hold >= WH_EXHALE_HOLD * 4) { // auto-continue after very long hold
+      clearInterval(t);
+      goWHInhaleHold();
+    }
+  }, 1000);
+
+  // Allow user to press pause btn to advance
+  document.getElementById('pauseBtn').textContent = 'Breathe In';
+  document.getElementById('pauseBtn').onclick = () => {
+    clearInterval(t);
+    document.getElementById('pauseBtn').textContent = 'Pause';
+    document.getElementById('pauseBtn').onclick = togglePause;
+    goWHInhaleHold();
+  };
+}
+
+function goWHInhaleHold() {
+  whPhase = 2;
+  updateWHPhaseUI();
+  document.getElementById('phaseLabel').textContent = 'INHALE';
+  document.getElementById('instrMain').textContent = 'Deep inhale — fill completely';
+  document.getElementById('instrSub').textContent = 'Take a massive breath in and hold at the top for 15 seconds.';
+  animateBubble('inhale', 2);
+  chime('inhale');
+
+  setTimeout(() => {
+    document.getElementById('phaseLabel').textContent = 'HOLD';
+    chime('hold');
+    let countdown = WH_INHALE_HOLD;
+    document.getElementById('instrMain').textContent = 'Hold at the top';
+    document.getElementById('instrSub').textContent = 'Lungs full. Feel the energy.';
+    const t = setInterval(() => {
+      if (isPaused) return;
+      document.getElementById('phaseTimer').textContent = countdown + 's';
+      countdown--;
+      if (countdown < 0) {
+        clearInterval(t);
+        endWHRound();
+      }
+    }, 1000);
+  }, 2200);
+}
+
+function endWHRound() {
+  if (currentRound >= currentExercise.rounds) {
+    completeSession();
+    return;
+  }
+  currentRound++;
+  whPhase = 0;
+  whBreathCount = 0;
+  document.getElementById('roundCurrent').textContent = currentRound;
+  const progress = ((currentRound - 1) / currentExercise.rounds) * 100;
+  document.getElementById('progressFill').style.width = progress + '%';
+  resetDots(WH_BREATHS);
+  updateWHPhaseUI();
+  document.getElementById('phaseTimer').textContent = '—';
+  document.getElementById('instrMain').textContent = 'Next round starting...';
+  document.getElementById('instrSub').textContent = 'Take a breath and begin again when ready.';
+  setTimeout(runWHBreathing, 2000);
+}
+
+function resetDots(count) {
+  for (let i = 0; i < count; i++) {
+    const d = document.getElementById('dot_' + i);
+    if (d) d.classList.remove('done');
+  }
+}
+
+// ============================================================
+// KAPALABHATI
+// ============================================================
+function startKapalabhati() {
+  kapBreathCount = 0;
+  currentRound = 1;
+  document.getElementById('roundCurrent').textContent = currentRound;
+  document.getElementById('roundTotal').textContent = currentExercise.rounds;
+  resetDots(KAP_BREATHS);
+  runKapalabhati();
+}
+
+function runKapalabhati() {
+  if (kapBreathCount >= KAP_BREATHS) {
+    // Retention hold
+    document.getElementById('phaseLabel').textContent = 'HOLD';
+    document.getElementById('instrMain').textContent = 'Exhale and hold';
+    document.getElementById('instrSub').textContent = 'Let the air out. Hold comfortably. Chin to chest (Jalandhara Bandha).';
+    animateBubble('exhale', 1.5);
+    chime('exhale');
+
+    let h = 0;
+    document.getElementById('pauseBtn').textContent = 'Inhale & Continue';
+    document.getElementById('pauseBtn').onclick = () => {
+      document.getElementById('pauseBtn').textContent = 'Pause';
+      document.getElementById('pauseBtn').onclick = togglePause;
+      endKapRound();
+    };
+    return;
+  }
+
+  const dot = document.getElementById('dot_' + kapBreathCount);
+  if (dot) dot.classList.add('done');
+
+  // Quick passive inhale
+  document.getElementById('phaseLabel').textContent = 'INHALE';
+  document.getElementById('instrMain').textContent = `Breath ${kapBreathCount + 1} / ${KAP_BREATHS}`;
+  document.getElementById('instrSub').textContent = 'Passive soft inhale through the nose';
+  setBubbleSize(155, '0.25s');
+  chime('tick');
+
+  setTimeout(() => {
+    // Sharp exhale (pumping)
+    document.getElementById('phaseLabel').textContent = 'EXHALE';
+    document.getElementById('instrMain').textContent = 'Pump it out!';
+    document.getElementById('instrSub').textContent = 'Sharp forceful exhale from the belly';
+    setBubbleSize(120, '0.2s');
+    kapBreathCount++;
+    setTimeout(runKapalabhati, 300);
+  }, 350);
+}
+
+function endKapRound() {
+  if (currentRound >= currentExercise.rounds) {
+    completeSession();
+    return;
+  }
+  currentRound++;
+  kapBreathCount = 0;
+  document.getElementById('roundCurrent').textContent = currentRound;
+  const progress = ((currentRound - 1) / currentExercise.rounds) * 100;
+  document.getElementById('progressFill').style.width = progress + '%';
+  resetDots(KAP_BREATHS);
+  document.getElementById('instrMain').textContent = 'Round complete!';
+  document.getElementById('instrSub').textContent = 'Rest for a breath. Next round in 3 seconds.';
+  setTimeout(runKapalabhati, 3000);
+}
+
+// ============================================================
+// CONTROLS
+// ============================================================
+function togglePause() {
+  isPaused = !isPaused;
+  document.getElementById('pauseBtn').textContent = isPaused ? 'Resume' : 'Pause';
+}
+
+function resetExercise() {
+  stopAll();
+  startExercise(lastExercise);
+}
+
+function toggleSound() {
+  soundOn = !soundOn;
+  document.getElementById('soundBtn').textContent = soundOn ? '🔔' : '🔕';
+}
+
+function stopAll() {
+  clearInterval(sessionTimer);
+  clearInterval(phaseTimer);
+  isPaused = false;
+  // Reset pause btn
+  const pb = document.getElementById('pauseBtn');
+  if (pb) { pb.textContent = 'Pause'; pb.onclick = togglePause; }
+}
+
+// ============================================================
+// COMPLETION
+// ============================================================
+function completeSession() {
+  stopAll();
+  chime('complete');
+
+  const ex = currentExercise;
+  const minutes = Math.round(totalSecondsElapsed / 60) || 1;
+
+  document.getElementById('statRounds').textContent = ex.rounds;
+  document.getElementById('statTime').textContent = minutes;
+  document.getElementById('completeMsg').textContent = ex.completionMsg;
+  document.getElementById('progressFill').style.width = '100%';
+
+  // Set complete icon based on theme
+  const icons = { sleep:'🌙', energy:'⚡', focus:'🎯', balance:'💚', calm:'☁️', stress:'🌸' };
+  document.getElementById('completeIcon').textContent = icons[ex.theme] || '✓';
+
+  showScreen('complete');
+}
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js');
+  }
+</script>
+</body>
+</html>
